@@ -14,6 +14,7 @@ type Profile = {
 export default function LiffPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -25,6 +26,7 @@ export default function LiffPage() {
 
         if (!liff.isLoggedIn()) {
           liff.login();
+          setIsLoggedIn(liff.isLoggedIn());
           return;
         }
 
@@ -37,6 +39,12 @@ export default function LiffPage() {
       }
     })();
   }, []);
+
+  const handleLogout = () => {
+    liff.logout();
+
+    window.location.reload();
+  };
 
   if (error) return <div>エラー: {error}</div>;
   if (!profile) return <div>読み込み中...</div>;
@@ -60,6 +68,7 @@ export default function LiffPage() {
         </div>
         {profile.statusMessage && <p>{profile.statusMessage}</p>}
       </div>
+      {isLoggedIn && <button onClick={handleLogout}>ログアウト</button>}
     </main>
   );
 }
