@@ -24,9 +24,11 @@ export default function LiffPage() {
           withLoginOnExternalBrowser: true,
         });
 
-        if (!liff.isLoggedIn()) {
+        const loggedIn = liff.isLoggedIn();
+        setIsLoggedIn(loggedIn);
+
+        if (!loggedIn) {
           liff.login();
-          setIsLoggedIn(liff.isLoggedIn());
           return;
         }
 
@@ -43,6 +45,8 @@ export default function LiffPage() {
   const handleLogout = () => {
     liff.logout();
 
+    setIsLoggedIn(false);
+    setProfile(null);
     window.location.reload();
   };
 
