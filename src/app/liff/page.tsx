@@ -20,21 +20,17 @@ export default function LiffPage() {
     (async () => {
       try {
         await liff.init({
-          liffId: process.env.NEXT_PUBLIC_LIFF_ID!, // 例: 2007899577-xxxxx
+          liffId: process.env.NEXT_PUBLIC_LIFF_ID!,
           withLoginOnExternalBrowser: true,
         });
 
         const loggedIn = liff.isLoggedIn();
         setIsLoggedIn(loggedIn);
 
-        if (!loggedIn) {
-          liff.login();
-          return;
+        if (loggedIn) {
+          const prof = await liff.getProfile();
+          setProfile(prof);
         }
-
-        const prof = await liff.getProfile();
-        setProfile(prof);
-
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         setError(err?.message ?? String(err));
@@ -42,37 +38,54 @@ export default function LiffPage() {
     })();
   }, []);
 
+  const handleLogin = async () => {
+    liff.login();
+  };
+
   const handleLogout = () => {
     liff.logout();
 
     setIsLoggedIn(false);
     setProfile(null);
-    window.location.reload();
   };
 
   if (error) return <div>エラー: {error}</div>;
-  if (!profile) return <div>読み込み中...</div>;
 
   return (
     <main>
-      <h1>プロフィール</h1>
-      <div>
-        {profile.pictureUrl && (
-          <Image
-            src={profile.pictureUrl}
-            alt="profile"
-            width={72}
-            height={72}
-            className="rounded-xl"
-          />
-        )}
-        <div>
-          <p>{profile.displayName}</p>
-          <p>{profile.userId}</p>
-        </div>
-        {profile.statusMessage && <p>{profile.statusMessage}</p>}
-      </div>
-      {isLoggedIn && <button onClick={handleLogout}>ログアウト</button>}
+      {!isLoggedIn ? (
+        <>
+          <h1>未ログイン</h1>
+          <button onClick={handleLogin}>ログイン</button>
+        </>
+      ) : (
+        <>
+          {profile ? (
+            <div>
+              <h1>プロフィール</h1>
+              <div>
+                {profile.pictureUrl && (
+                  <Image
+                    src={profile.pictureUrl}
+                    alt="profile"
+                    width={72}
+                    height={72}
+                    className="rounded-xl"
+                  />
+                )}
+                <div>
+                  <p>{profile.displayName}</p>
+                  <p>{profile.userId}</p>
+                </div>
+                {profile.statusMessage && <p>{profile.statusMessage}</p>}
+              </div>
+            </div>
+          ) : (
+            <p>読み込み中...</p>
+          )}
+          <button onClick={handleLogout}>ログアウト</button>
+        </>
+      )}
     </main>
   );
 }
