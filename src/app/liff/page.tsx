@@ -1,91 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import liff from "@line/liff";
-import Image from "next/image";
-
-type Profile = {
-  userId: string;
-  displayName: string;
-  pictureUrl?: string;
-  statusMessage?: string;
-};
+import { useRouter } from "next/navigation";
 
 export default function LiffPage() {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     (async () => {
-      try {
-        await liff.init({
-          liffId: process.env.NEXT_PUBLIC_LIFF_ID!,
-          withLoginOnExternalBrowser: true,
-        });
+      await liff.init({ liffId: process.env.NEXT_PUBLIC_LIFF_ID! });
+      if (!liff.isLoggedIn()) {
+        liff.login();
+        return;
+      }
+      const idToken = liff.getIDToken();
+      const profile = await liff.getProfile();
 
-        const loggedIn = liff.isLoggedIn();
-        setIsLoggedIn(loggedIn);
+      const res = await fetch("/api/auth/line/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken, profile }),
+      });
 
-        if (loggedIn) {
-          const prof = await liff.getProfile();
-          setProfile(prof);
-        }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (err: any) {
-        setError(err?.message ?? String(err));
+      const data = await res.json();
+      if (data.exists) {
+        router.push("/dashboard");
+      } else {
+        router.push(
+          `/register?lineId=${profile.userId}&name=${encodeURIComponent(
+            profile.displayName
+          )}&avatarUrl=${encodeURIComponent(profile.pictureUrl ?? "")}`
+        );
       }
     })();
-  }, []);
+  }, [router]);
 
-  const handleLogin = async () => {
-    liff.login();
-  };
-
-  const handleLogout = () => {
-    liff.logout();
-
-    setIsLoggedIn(false);
-    setProfile(null);
-  };
-
-  if (error) return <div>エラー: {error}</div>;
-
-  return (
-    <main>
-      {!isLoggedIn ? (
-        <>
-          <h1>未ログイン</h1>
-          <button onClick={handleLogin}>ログイン</button>
-        </>
-      ) : (
-        <>
-          {profile ? (
-            <div>
-              <h1>プロフィール</h1>
-              <div>
-                {profile.pictureUrl && (
-                  <Image
-                    src={profile.pictureUrl}
-                    alt="profile"
-                    width={72}
-                    height={72}
-                    className="rounded-xl"
-                  />
-                )}
-                <div>
-                  <p>{profile.displayName}</p>
-                  <p>{profile.userId}</p>
-                </div>
-                {profile.statusMessage && <p>{profile.statusMessage}</p>}
-              </div>
-            </div>
-          ) : (
-            <p>読み込み中...</p>
-          )}
-          <button onClick={handleLogout}>ログアウト</button>
-        </>
-      )}
-    </main>
-  );
+  return <p>Loading...</p>;
 }
