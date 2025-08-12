@@ -8,11 +8,15 @@ export async function getCurrentUser() {
 }
 
 export async function setUserSession(userId: string) {
-  (await cookies()).set("user_id", userId, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-  });
+  try {
+    (await cookies()).set("user_id", userId, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+    });
+  } catch (err) {
+    console.error("Error in setUserSession: ", err);
+  }
 }
 
 export async function clearUserSession() {

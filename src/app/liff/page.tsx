@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import liff from "@line/liff";
 import { useRouter } from "next/navigation";
+import { Loading } from "@/components/Loading";
 
 export default function LiffPage() {
   const router = useRouter();
@@ -24,17 +25,18 @@ export default function LiffPage() {
       });
 
       const data = await res.json();
+
       if (data.exists) {
         router.push("/dashboard");
       } else {
         router.push(
           `/register?lineId=${profile.userId}&name=${encodeURIComponent(
             profile.displayName
-          )}&avatarUrl=${encodeURIComponent(profile.pictureUrl ?? "")}`
+          )}`
         );
       }
     })();
   }, [router]);
 
-  return <p>Loading...</p>;
+  return <Loading />;
 }
